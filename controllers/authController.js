@@ -1,4 +1,4 @@
-import User from '../models/User.js';
+import User from '../models/User.js'; // Ensure this import is correct
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -18,7 +18,7 @@ export const register = async (req, res) => {
     let user = await User.findOne({ username });
     if (user) return res.status(400).json({ msg: 'User already exists' });
 
-    // If registering as admin, check the admin secret key
+    // If registering as admin, validate the admin secret key
     if (role === 'ADMIN') {
       if (!adminSecret || adminSecret !== process.env.ADMIN_SECRET_KEY) {
         return res.status(403).json({ msg: 'Invalid admin secret key' });
@@ -36,7 +36,7 @@ export const register = async (req, res) => {
     const payload = { userId: user._id, role: user.role };
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '10h' });
 
-    // Send the token in the response along with a success message
+    // Send the token and success message
     res.json({ msg: 'User registered successfully', token });
   } catch (err) {
     console.error(err.message);
@@ -63,6 +63,25 @@ export const login = async (req, res) => {
 
     // Return the token
     res.json({ token });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+};
+
+export const getAllAdminUsernames = async (req, res) => {
+  try {
+    // Find all users with the role of 'ADMIN' and select only the 'username' field
+    const admins = await User.find({ role: 'ADMIN' }).select('username');
+
+    if (!admins || admins.length === 0) {
+      return res.status(404).json({ msg: 'No admins found' });
+    }
+
+    // Map the result to extract just the usernames
+    const adminUsernames = admins.map(admin => admin.username);
+
+    res.json({ admins: adminUsernames });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');

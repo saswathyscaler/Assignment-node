@@ -1,6 +1,7 @@
 import express from 'express';
-import { register, login } from '../controllers/authController.js';
+import { register, login, getAllAdminUsernames } from '../controllers/authController.js';
 import { body } from 'express-validator';
+import { authenticateJWT, authorizeRoles } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
@@ -15,5 +16,8 @@ router.post('/register', [
 
 // Login route
 router.post('/login', login);
+// Route to fetch all admin usernames
+router.get('/admins', authenticateJWT, authorizeRoles('USER', 'ADMIN'), getAllAdminUsernames);
+
 
 export default router;
