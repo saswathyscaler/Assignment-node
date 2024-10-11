@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 
 dotenv.config(); // Load environment variables from .env
 
-// Register new user or admin
+// Register new user or admin and automatically generate JWT
 export const register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -31,7 +31,13 @@ export const register = async (req, res) => {
 
     // Save the user to the database
     await user.save();
-    res.json({ msg: 'User registered successfully' });
+
+    // Generate a JWT token
+    const payload = { userId: user._id, role: user.role };
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '10h' });
+
+    // Send the token in the response along with a success message
+    res.json({ msg: 'User registered successfully', token });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
